@@ -103,9 +103,9 @@ function banUser() {
 
 function setPermission() {
     rl.question('Введите логин пользователя: ', (username) => {
-        rl.question('Введите новую роль (user/admin): ', (newRole) => {
+        rl.question('Введите новую роль (user/vip/admin): ', (newRole) => {
             const user = accounts.find(acc => acc.username === username);
-            if (user && (newRole === 'user' || newRole === 'admin')) {
+            if (user && (newRole === 'user' || newRole === 'admin' || newRole === 'vip')) {
                 user.role = newRole;
                 saveAccounts();
                 console.log('✅ Роль пользователя обновлена!');
@@ -163,11 +163,17 @@ function commandLoop(user) {
             case 'help':
                 console.log('📜 Доступные команды:');
                 console.log('🔹 whoami — ваш логин и роль');
-                console.log('🔹 banuser — заблокировать пользователя (admin)');
-                console.log('🔹 exit — выйти из аккаунта');
                 console.log('🔹 changepass — сменить пароль');
-                console.log('🔹 showusers — показать всех пользователей (admin)')
-                console.log('🔹 setperm — изменить роль пользователя (admin)')
+                console.log('🔹 exit — выйти из аккаунта');
+                if (user.role === 'admin') {
+                    console.log('🔹 banuser — заблокировать пользователя');
+                    console.log('🔹 showusers — показать всех пользователей');
+                    console.log('🔹 setperm — изменить роль пользователя');
+                }
+                if (user.role === 'vip') {
+                    console.log('⭐ [VIP] Дополнительные команды:');
+                    console.log('❌ К сожалению команды в разработке');
+                }
                 break;
             case 'whoami':
                 console.log(`👤 Логин: ${user.username} | Роль: ${user.role} ${user.banned ? '🚫 (ЗАБАНЕН)' : ''}`);
