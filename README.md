@@ -3,10 +3,10 @@ This is a convenient command-line replacement for Linux and MacOS. In the future
 
 
 # Accounts
-Added the ability to register your account. For all questions, write to support. So far, the accounts are not written to the database, at the moment it is happening locally.
-- login: test
-- password: test
-- role: admin
+It is possible to create accounts with a hashed password, that is, even through the "accounts.json" files, it is not possible to understand which password is used. The password must also consist of at least 6 characters. I have removed other functions so far as the project is still under development.
+
+# Command_Line by C++
+Follow this link (https://github.com/NeuroTee/command_line) you can find almost the same command_line, but it is written in C++ and will no longer receive any updates. So use the JavaScript version.
 
 
 # Building linux
