@@ -101,6 +101,22 @@ function banUser() {
     });
 }
 
+function setPermission() {
+    rl.question('Введите логин пользователя: ', (username) => {
+        rl.question('Введите новую роль (user/admin): ', (newRole) => {
+            const user = accounts.find(acc => acc.username === username);
+            if (user && (newRole === 'user' || newRole === 'admin')) {
+                user.role = newRole;
+                saveAccounts();
+                console.log('✅ Роль пользователя обновлена!');
+            } else {
+                console.log('❌ Ошибка: неверный логин или роль.');
+            }
+            commandLoop();
+        });
+    });
+}
+
 async function changePassword(user) {
     const oldPassword = await askQuestion("🔐 Введите старый пароль: ");
     if (!await bcrypt.compare(oldPassword, user.password)) {
@@ -151,6 +167,7 @@ function commandLoop(user) {
                 console.log('🔹 exit — выйти из аккаунта');
                 console.log('🔹 changepass — сменить пароль');
                 console.log('🔹 showusers — показать всех пользователей (admin)')
+                console.log('🔹 setperm — изменить роль пользователя (admin)')
                 break;
             case 'whoami':
                 console.log(`👤 Логин: ${user.username} | Роль: ${user.role} ${user.banned ? '🚫 (ЗАБАНЕН)' : ''}`);
@@ -167,6 +184,10 @@ function commandLoop(user) {
                 break;
             case 'showusers':
                 if (user.role === 'admin') showAccounts();
+                else console.log('❌ Недостаточно прав!');
+                break;
+            case 'setperm':
+                if (user.role === 'admin') setPermission();
                 else console.log('❌ Недостаточно прав!');
                 break;
             default:
