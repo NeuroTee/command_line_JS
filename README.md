@@ -7,7 +7,6 @@ Added the ability to register your account. For all questions, write to support.
 - login: test
 - password: test
 - role: admin
-This is a test account.
 
 
 # Building linux
