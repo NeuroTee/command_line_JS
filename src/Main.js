@@ -1,12 +1,15 @@
 const fs = require('fs');
 const readline = require('readline');
+const bcrypt = require('bcrypt');
 
 const rl = readline.createInterface({
     input: process.stdin,
-            output: process.stdout
+    output: process.stdout
 });
 
+const saltRounds = 10;
 let accounts = [];
+let failedAttempts = {};
 
 function loadAccounts() {
     if (fs.existsSync('accounts.json')) {
@@ -19,136 +22,147 @@ function saveAccounts() {
     fs.writeFileSync('accounts.json', JSON.stringify(accounts, null, 4));
 }
 
+function logAction(user, action) {
+    const logEntry = `${new Date().toISOString()} | ${user.username} | ${action}\n`;
+    fs.appendFileSync('logs.txt', logEntry);
+}
+
 function registerAccount() {
     rl.question('Введите логин: ', (username) => {
-    if (accounts.some(acc => acc.username === username)) {
-        console.log('❌ Ошибка: этот логин уже занят!');
-        mainMenu();
-        return;
-    }
+        if (accounts.some(acc => acc.username === username)) {
+            console.log('❌ Ошибка: этот логин уже занят!');
+            mainMenu();
+            return;
+        }
 
-    rl.question('Введите пароль: ', (password) => {
-            accounts.push({ username, password, role: 'user' });
-    saveAccounts();
-    console.log('✅ Аккаунт успешно создан!');
-    mainMenu();
+        rl.question('Введите пароль: ', async (password) => {
+            if (password.length < 6) {
+                console.log('⚠️ Пароль должен быть не менее 6 символов!');
+                mainMenu();
+                return;
+            }
+
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
+            accounts.push({ username, password: hashedPassword, role: 'user', banned: false });
+            saveAccounts();
+            console.log('✅ Аккаунт успешно создан!');
+            mainMenu();
         });
     });
 }
 
 function login() {
     rl.question('Введите логин: ', (username) => {
-            rl.question('Введите пароль: ', (password) => {
-            const user = accounts.find(acc => acc.username === username && acc.password === password);
-    if (user) {
-        console.log('✅ Вход выполнен!');
-        commandLoop(user);
-    } else {
-        console.log('❌ Ошибка: неверный логин или пароль!');
-        mainMenu();
-    }
-        });
-    });
-}
+        if (failedAttempts[username] >= 3) {
+            console.log('🚫 Слишком много неудачных попыток! Попробуйте позже.');
+            mainMenu();
+            return;
+        }
 
-function showAccounts() {
-    console.log('📜 Список всех пользователей:');
-    accounts.forEach(acc => console.log(`👤 Логин: ${acc.username} | Роль: ${acc.role}`));
-}
-
-function deleteUser() {
-    rl.question('Введите логин пользователя для удаления: ', (username) => {
-            accounts = accounts.filter(acc => acc.username !== username);
-    saveAccounts();
-    console.log('✅ Пользователь удалён.');
-    mainMenu();
-    });
-}
-
-function setPermission() {
-    rl.question('Введите логин пользователя: ', (username) => {
-            rl.question('Введите новую роль (user/admin): ', (newRole) => {
+        rl.question('Введите пароль: ', async (password) => {
             const user = accounts.find(acc => acc.username === username);
-    if (user && (newRole === 'user' || newRole === 'admin')) {
-        user.role = newRole;
-        saveAccounts();
-        console.log('✅ Роль пользователя обновлена!');
-    } else {
-        console.log('❌ Ошибка: неверный логин или роль.');
-    }
-    mainMenu();
+            if (!user) {
+                console.log('❌ Ошибка: пользователь не найден!');
+                mainMenu();
+                return;
+            }
+            if (user.banned) {
+                console.log('🚫 Ваш аккаунт заблокирован!');
+                mainMenu();
+                return;
+            }
+
+            if (await bcrypt.compare(password, user.password)) {
+                console.log('✅ Вход выполнен!');
+                failedAttempts[username] = 0;
+                logAction(user, 'Вход в систему');
+                commandLoop(user);
+            } else {
+                failedAttempts[username] = (failedAttempts[username] || 0) + 1;
+                console.log(`❌ Ошибка: неверный пароль! (${failedAttempts[username]}/3)`);
+                mainMenu();
+            }
         });
     });
+}
+
+function banUser() {
+    rl.question('Введите логин пользователя для блокировки: ', (username) => {
+        const user = accounts.find(acc => acc.username === username);
+        if (user) {
+            user.banned = true;
+            saveAccounts();
+            console.log(`🚫 Пользователь ${username} заблокирован!`);
+            logAction(user, 'Бан аккаунта');
+        } else {
+            console.log('❌ Ошибка: пользователь не найден.');
+        }
+        mainMenu();
+    });
+}
+
+async function changePassword(user) {
+    const oldPassword = await askQuestion("🔐 Введите старый пароль: ");
+    if (!await bcrypt.compare(oldPassword, user.password)) {
+        console.log("❌ Ошибка: старый пароль неверный!");
+        return;
+    }
+
+    const newPassword = await askQuestion("🔑 Введите новый пароль: ");
+    if (newPassword.length < 6) {
+        console.log("⚠️ Пароль должен быть не менее 6 символов!");
+        return;
+    }
+
+    if (await bcrypt.compare(newPassword, user.password)) {
+        console.log("⚠️ Новый пароль не должен совпадать со старым!");
+        return;
+    }
+
+    const confirmPassword = await askQuestion("🔑 Повторите новый пароль: ");
+    if (newPassword !== confirmPassword) {
+        console.log("❌ Ошибка: пароли не совпадают!");
+        return;
+    }
+
+    user.password = await bcrypt.hash(newPassword, saltRounds);
+    saveAccounts();
+    console.log("✅ Пароль успешно изменён!");
+    logAction(user, 'Смена пароля');
+    mainMenu();
 }
 
 function askQuestion(query) {
     return new Promise(resolve => rl.question(query, resolve));
 }
 
-async function changePassword(user) {
-    const oldPassword = await askQuestion("🔐 Введите старый пароль: ");
-
-    if (oldPassword !== user.password) {
-        console.log("❌ Ошибка: старый пароль неверный!");
-        return;
-    }
-
-    const newPassword = await askQuestion("🔑 Введите новый пароль: ");
-    const confirmPassword = await askQuestion("🔑 Повторите новый пароль: ");
-
-    if (newPassword !== confirmPassword) {
-        console.log("❌ Ошибка: пароли не совпадают!");
-        return;
-    }
-
-    user.password = newPassword;
-    saveAccounts();
-    console.log("✅ Пароль успешно изменён!");
-
-    mainMenu();
-}
-
 function commandLoop(user) {
     rl.question('\n💻 Введите команду (help для списка): ', (command) => {
-            switch (command) {
-                case 'help':
-                    console.log('📜 Доступные команды:');
-                    console.log('🔹 whoami — ваш логин и роль');
-                    console.log('🔹 showusers — показать всех пользователей (admin)');
-                    console.log('🔹 deluser — удалить пользователя (admin)');
-                    console.log('🔹 setperm — изменить права пользователя (admin)');
-                    console.log('🔹 exit — выйти из аккаунта');
-                    console.log('🔹 changepass — сменить пароль');
-                    break;
-                case 'whoami':
-                    console.log(`👤 Логин: ${user.username} | Роль: ${user.role}`);
+        switch (command) {
+            case 'help':
+                console.log('📜 Доступные команды:');
+                console.log('🔹 whoami — ваш логин и роль');
+                console.log('🔹 banuser — заблокировать пользователя (admin)');
+                console.log('🔹 exit — выйти из аккаунта');
+                console.log('🔹 changepass — сменить пароль');
                 break;
-                case 'showusers':
-                    if (user.role === 'admin') showAccounts();
-                    else console.log('❌ Недостаточно прав!');
-                    break;
-                case 'deluser':
-                    if (user.role === 'admin') deleteUser();
-                    else console.log('❌ Недостаточно прав!');
-                    break;
-                case 'setperm':
-                    if (user.role === 'admin') setPermission();
-                    else console.log('❌ Недостаточно прав!');
-                    break;
-                case 'exit':
-                    mainMenu();
-                    return;
-                case "changepass":
-                    if (!user) {
-                        console.log("❌ Ошибка: вы не вошли в аккаунт!");
-                    } else {
-                        changePassword(user);
-                    }
-                    return;
-                default:
-                    console.log('❌ Неизвестная команда!');
-            }
-            commandLoop(user);
+            case 'whoami':
+                console.log(`👤 Логин: ${user.username} | Роль: ${user.role} ${user.banned ? '🚫 (ЗАБАНЕН)' : ''}`);
+                break;
+            case 'banuser':
+                if (user.role === 'admin') banUser();
+                else console.log('❌ Недостаточно прав!');
+                break;
+            case 'changepass':
+                changePassword(user);
+                break;
+            case 'exit':
+                mainMenu();
+                return;
+            default:
+                console.log('❌ Неизвестная команда!');
+        }
+        commandLoop(user);
     });
 }
 
@@ -160,9 +174,8 @@ function mainMenu() {
         else if (choice === 'register') registerAccount();
         else if (choice === 'exit') {
             console.log('👋 Выход из программы...');
-            process.exit(0); // Завершение программы
-        }
-        else {
+            process.exit(0);
+        } else {
             console.log('❌ Неизвестная команда!');
             mainMenu();
         }

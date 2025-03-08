@@ -3,5 +3,11 @@
         "username": "test",
         "password": "test",
         "role": "admin"
+    },
+    {
+        "username": "surkov",
+        "password": "$2b$10$LE.ik1hvsa6tBPI9/rULjeT1J/nhEx.HQLG0Ajl84Qs3VQUaTZOHi",
+        "role": "user",
+        "banned": false
     }
 ]
