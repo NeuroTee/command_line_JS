@@ -118,6 +118,7 @@ function commandLoop(user) {
                     console.log('🔹 deluser — удалить пользователя (admin)');
                     console.log('🔹 setperm — изменить права пользователя (admin)');
                     console.log('🔹 exit — выйти из аккаунта');
+                    console.log('🔹 changepass — сменить пароль');
                     break;
                 case 'whoami':
                     console.log(`👤 Логин: ${user.username} | Роль: ${user.role}`);
