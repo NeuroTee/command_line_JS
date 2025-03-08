@@ -132,6 +132,11 @@ async function changePassword(user) {
     mainMenu();
 }
 
+function showAccounts() {
+    console.log('📜 Список всех пользователей:');
+    accounts.forEach(acc => console.log(`👤 Логин: ${acc.username} | Роль: ${acc.role}`));
+}
+
 function askQuestion(query) {
     return new Promise(resolve => rl.question(query, resolve));
 }
@@ -145,6 +150,7 @@ function commandLoop(user) {
                 console.log('🔹 banuser — заблокировать пользователя (admin)');
                 console.log('🔹 exit — выйти из аккаунта');
                 console.log('🔹 changepass — сменить пароль');
+                console.log('🔹 showusers — показать всех пользователей (admin)')
                 break;
             case 'whoami':
                 console.log(`👤 Логин: ${user.username} | Роль: ${user.role} ${user.banned ? '🚫 (ЗАБАНЕН)' : ''}`);
@@ -158,7 +164,11 @@ function commandLoop(user) {
                 break;
             case 'exit':
                 mainMenu();
-                return;
+                break;
+            case 'showusers':
+                if (user.role === 'admin') showAccounts();
+                else console.log('❌ Недостаточно прав!');
+                break;
             default:
                 console.log('❌ Неизвестная команда!');
         }

@@ -1,13 +1,8 @@
 [
     {
-        "username": "test",
-        "password": "test",
-        "role": "admin"
-    },
-    {
         "username": "surkov",
-        "password": "$2b$10$LE.ik1hvsa6tBPI9/rULjeT1J/nhEx.HQLG0Ajl84Qs3VQUaTZOHi",
-        "role": "user",
+        "password": "$2b$10$WLAXbJiHJ10huYRspkokTOw6YGOJFx0F4q5YpyIEVZDpj34eXM50K",
+        "role": "admin",
         "banned": false
     }
 ]
