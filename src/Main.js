@@ -183,7 +183,7 @@ async function setNickname(user) {
 
     console.log(`✅ Никнейм успешно изменён на ${newNickname}!`);
     logAction(user, 'Изменение никнейма');
-    commandLoop();
+    commandLoop(user);
 }
 
 function commandLoop(user) {
