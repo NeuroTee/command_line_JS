@@ -234,7 +234,10 @@ function commandLoop(user) {
                 else console.log('❌ Недостаточно прав!');
                 break;
             case 'betaver':
-                if (user.role === 'vip' || user.role === 'admin') betaLoop(user);
+                if (user.role === 'vip' || user.role === 'admin') {
+                    console.log('Включен режим бета тестирования')
+                    betaLoop(user);
+                }
                 else console.log('❌ Вы не можете учавтсвовать в бета тестировании');
                 break;
             default:
@@ -296,20 +299,19 @@ function callAssistant(user) {
 
 
 function betaLoop(user) {
-    console.log('Включен бета режим');
 
     rl.question('\n💻 Введите команду (betaver) (help для списка): ', (command) => {
         switch (command) {
             case 'help':
                 console.log('📜 Доступные команды:');
                 console.log('🤖 ai - пообщатся с личным помощником')
-                console.log('🔹 deflaut - вернутся в обыный режим')
+                console.log('🔹 exit - вернутся в обыный режим')
                 break;
             case 'ai':
                 console.log('Включен режим помощника (может быть очень слабым)');
                 callAssistant(user);
                 break;
-            case 'deflaut':
+            case 'exit':
                 console.log('Включен обычный режим');
                 commandLoop(user);
                 break;
