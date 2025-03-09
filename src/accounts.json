@@ -4,11 +4,5 @@
         "password": "$2b$10$WLAXbJiHJ10huYRspkokTOw6YGOJFx0F4q5YpyIEVZDpj34eXM50K",
         "role": "admin",
         "banned": false
-    },
-    {
-        "username": "test",
-        "password": "$2b$10$PjU9/raJ8UPJpr52sHX7yOHysRmz5iFT.KYjmVWfNUKeLweag6Rfe",
-        "role": "user",
-        "banned": true
     }
 ]

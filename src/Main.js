@@ -109,19 +109,40 @@ function banUser(user) {
     });
 }
 
-function setPermission() {
+function setPermission(user) {
     rl.question('Введите логин пользователя: ', (username) => {
         rl.question('Введите новую роль (user/vip/admin): ', (newRole) => {
-            const user = accounts.find(acc => acc.username === username);
-            if (user && (newRole === 'user' || newRole === 'admin' || newRole === 'vip')) {
-                user.role = newRole;
+            const tuser = accounts.find(acc => acc.username === username);
+            if (tuser && (newRole === 'user' || newRole === 'admin' || newRole === 'vip')) {
+                tuser.role = newRole;
                 saveAccounts();
                 console.log('✅ Роль пользователя обновлена!');
             } else {
                 console.log('❌ Ошибка: неверный логин или роль.');
             }
-            commandLoop();
+            commandLoop(user);
         });
+    });
+}
+
+function deleteUser(user) {
+    rl.question('Введите логин пользователя для удаления: ', (username) => {
+        const index = accounts.findIndex(acc => acc.username === username);
+        if (index === -1) {
+            console.log('❌ Ошибка: пользователь не найден.');
+            return commandLoop(user);
+        }
+
+        if (accounts[index].role === 'admin') {
+            console.log('❌ Ошибка: нельзя удалить администратора.');
+            return commandLoop(user);
+        }
+
+        accounts.splice(index, 1);
+        saveAccounts();
+        console.log(`🗑️ Пользователь ${username} удален.`);
+        logAction(user, `Удалил пользователя ${username}`);
+        commandLoop(user);
     });
 }
 
@@ -153,7 +174,7 @@ async function changePassword(user) {
     saveAccounts();
     console.log("✅ Пароль успешно изменён!");
     logAction(user, 'Смена пароля');
-    mainMenu();
+    commandLoop(user);
 }
 
 function showAccounts() {
@@ -208,6 +229,7 @@ function commandLoop(user) {
                     console.log('🔹 setperm — изменить роль пользователя');
                     console.log('🔹 betaver — перейти в бета верисю')
                     console.log('🔹 setlogin — изменить логин');
+                    console.log('🔹 deluser — удалить пользователя');
                 }
                 if (user.role === 'vip') {
                     console.log('⭐ [VIP] Дополнительные команды:');
@@ -235,8 +257,11 @@ function commandLoop(user) {
                 else console.log('❌ Недостаточно прав!');
                 break;
             case 'setperm':
-                if (user.role === 'admin') setPermission();
+                if (user.role === 'admin') setPermission(user);
                 else console.log('❌ Недостаточно прав!');
+                break;
+            case 'deluser':
+                deleteUser(user);
                 break;
             case 'setlogin':
                 if (user.role === 'vip' || user.role === 'admin') setNickname(user);
