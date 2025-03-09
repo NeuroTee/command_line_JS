@@ -86,18 +86,26 @@ function login() {
     });
 }
 
-function banUser() {
+function banUser(user) {
     rl.question('Введите логин пользователя для блокировки: ', (username) => {
-        const user = accounts.find(acc => acc.username === username);
-        if (user) {
-            user.banned = true;
+        if (!accounts || !Array.isArray(accounts)) {
+            console.log('❌ Ошибка: база данных пользователей повреждена.');
+            return commandLoop(user);
+        }
+
+        const bannedUser = accounts.find(acc => acc.username === username);
+        if (bannedUser) {
+            bannedUser.banned = !bannedUser.banned;
             saveAccounts();
-            console.log(`🚫 Пользователь ${username} заблокирован!`);
-            logAction(user, 'Бан аккаунта');
+
+            const status = bannedUser.banned ? 'заблокирован' : 'разблокирован';
+            console.log(`🚫 Пользователь ${username} ${status}!`);
+
+            logAction(user, `${status === 'заблокирован' ? 'Заблокировал' : 'Разблокировал'} пользователя ${username}`);
         } else {
             console.log('❌ Ошибка: пользователь не найден.');
         }
-        commandLoop();
+        commandLoop(user);
     });
 }
 
@@ -212,7 +220,7 @@ function commandLoop(user) {
                 console.log(`👤 Логин: ${user.username} | Роль: ${user.role} ${user.banned ? '🚫 (ЗАБАНЕН)' : ''}`);
                 break;
             case 'banuser':
-                if (user.role === 'admin') banUser();
+                if (user.role === 'admin') banUser(user);
                 else console.log('❌ Недостаточно прав!');
                 break;
             case 'changepass':

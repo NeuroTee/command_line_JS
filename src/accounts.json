@@ -9,6 +9,6 @@
         "username": "test",
         "password": "$2b$10$PjU9/raJ8UPJpr52sHX7yOHysRmz5iFT.KYjmVWfNUKeLweag6Rfe",
         "role": "user",
-        "banned": false
+        "banned": true
     }
 ]
