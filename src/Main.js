@@ -97,7 +97,7 @@ function banUser() {
         } else {
             console.log('❌ Ошибка: пользователь не найден.');
         }
-        mainMenu();
+        commandLoop();
     });
 }
 
@@ -157,6 +157,35 @@ function askQuestion(query) {
     return new Promise(resolve => rl.question(query, resolve));
 }
 
+//vip users
+
+async function setNickname(user) {
+
+    const newNickname = await askQuestion('Введите новый никнейм: ');
+
+    if (accounts.some(acc => acc.username === newNickname)) {
+        console.log('❌ Ошибка: этот никнейм уже занят!');
+        return;
+    }
+
+    if (newNickname.length < 3 || newNickname.length > 20) {
+        console.log('⚠️ Никнейм должен быть от 3 до 20 символов!');
+        return;
+    }
+
+    if (/[^a-zA-Z0-9_]/.test(newNickname)) {
+        console.log('⚠️ Никнейм может содержать только буквы, цифры и символ подчеркивания!');
+        return;
+    }
+
+    user.username = newNickname;
+    saveAccounts();
+
+    console.log(`✅ Никнейм успешно изменён на ${newNickname}!`);
+    logAction(user, 'Изменение никнейма');
+    commandLoop();
+}
+
 function commandLoop(user) {
     rl.question('\n💻 Введите команду (help для списка): ', (command) => {
         switch (command) {
@@ -172,7 +201,8 @@ function commandLoop(user) {
                 }
                 if (user.role === 'vip') {
                     console.log('⭐ [VIP] Дополнительные команды:');
-                    console.log('❌ К сожалению команды в разработке');
+                    console.log('🔹 setlogin — изменить логин');
+
                 }
                 break;
             case 'whoami':
@@ -194,6 +224,10 @@ function commandLoop(user) {
                 break;
             case 'setperm':
                 if (user.role === 'admin') setPermission();
+                else console.log('❌ Недостаточно прав!');
+                break;
+            case 'setlogin':
+                if (user.role === 'vip' || user.role === 'admin') setNickname(user);
                 else console.log('❌ Недостаточно прав!');
                 break;
             default:
