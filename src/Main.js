@@ -202,6 +202,7 @@ function commandLoop(user) {
                 if (user.role === 'vip') {
                     console.log('⭐ [VIP] Дополнительные команды:');
                     console.log('🔹 setlogin — изменить логин');
+                    console.log('🔹 betaver — перейти в бета верисю');
 
                 }
                 break;
@@ -230,10 +231,38 @@ function commandLoop(user) {
                 if (user.role === 'vip' || user.role === 'admin') setNickname(user);
                 else console.log('❌ Недостаточно прав!');
                 break;
+            case 'betaver':
+                if (user.role === 'vip' || user.role === 'admin') betaLoop(user);
+                else console.log('❌ Вы не можете учавтсвовать в бета тестировании');
+                break;
             default:
                 console.log('❌ Неизвестная команда!');
         }
         commandLoop(user);
+    });
+}
+
+
+
+function betaLoop(user) {
+    rl.question('\n💻 Введите команду (betaver) (help для списка): ', (command) => {
+        switch (command) {
+            case 'help':
+                console.log('📜 Доступные команды:');
+                console.log('🤖 ai - пообщатся с личным помощником')
+                console.log('🔹 deflaut - вернутся в обыный режим')
+                break;
+            case 'ai':
+                console.log('В разработке...');
+                break;
+            case 'deflaut':
+                console.log('Включен обычный режим');
+                commandLoop(user);
+                break;
+            default:
+                console.log('❌ Неизвестная команда!');
+        }
+        betaLoop(user);
     });
 }
 
