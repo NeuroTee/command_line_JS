@@ -218,6 +218,7 @@ function commandLoop(user) {
                 break;
             case 'whoami':
                 console.log(`👤 Логин: ${user.username} | Роль: ${user.role} ${user.banned ? '🚫 (ЗАБАНЕН)' : ''}`);
+                logAction(user, 'Использовал whoami')
                 break;
             case 'banuser':
                 if (user.role === 'admin') banUser(user);
