@@ -148,6 +148,22 @@ function giftVIPStatus(user) {
     }
 }
 
+function deleteAccount(user) {
+    rl.question('Вы уверены, что хотите удалить свой аккаунт? (yes/no): ', (answer) => {
+        if (answer.toLowerCase() === 'yes') {
+            // Удаляем аккаунт из массива
+            accounts = accounts.filter(acc => acc.username !== user.username);
+            saveAccounts();  // Сохраняем обновленный список аккаунтов
+            console.log('✅ Ваш аккаунт успешно удалён.');
+
+            logAction(user, 'Удаление аккаунта');
+            mainMenu();  // Возвращаем в главное меню после удаления
+        } else {
+            console.log('❌ Удаление аккаунта отменено.');
+            commandLoop(user);  // Возвращаем в командный цикл
+        }
+    });
+}
 
 
 function setPermission(user) {
@@ -264,6 +280,7 @@ function commandLoop(user) {
                 console.log('🔹 whoami — ваш логин и роль');
                 console.log('🔹 changepass — сменить пароль');
                 console.log('🔹 exit — выйти из аккаунта');
+                console.log('🔹 delacc — удалить аккаунт');
                 if (user.role === 'admin') {
                     console.log('🔹 banuser — заблокировать пользователя');
                     console.log('🔹 showusers — показать всех пользователей');
@@ -278,7 +295,7 @@ function commandLoop(user) {
                     console.log('🔹 setlogin — изменить логин');
                     console.log('🔹 betaver — перейти в бета верисю');
                     console.log('🔹 giftvip — передать свою роль vip другому пользователю');
-
+                    console.log('🔹 checkban — проверить бан пользователя')
                 }
                 break;
             case 'whoami':
@@ -295,8 +312,12 @@ function commandLoop(user) {
             case 'exit':
                 mainMenu();
                 break;
+            case 'delacco':
+                deleteAccount(user);
+                break;
             case 'checkban':
-                checkBanStatus(user);
+                if (user.role === 'admin' || user.role === 'vip') checkBanStatus(user);
+                else console.log('❌ Недостаточно прав!');
                 break;
             case 'showusers':
                 if (user.role === 'admin') showAccounts();
