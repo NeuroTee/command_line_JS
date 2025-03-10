@@ -88,20 +88,43 @@ function login() {
 
 function banUser(user) {
     rl.question('Введите логин пользователя для блокировки: ', (username) => {
-        if (!accounts || !Array.isArray(accounts)) {
-            console.log('❌ Ошибка: база данных пользователей повреждена.');
-            return commandLoop(user);
-        }
-
         const bannedUser = accounts.find(acc => acc.username === username);
         if (bannedUser) {
-            bannedUser.banned = !bannedUser.banned;
-            saveAccounts();
+            rl.question('Введите количество минут для блокировки: ', (minutes) => {
+                const banDuration = parseInt(minutes, 10);
+                if (isNaN(banDuration) || banDuration <= 0) {
+                    console.log('❌ Ошибка: неверное количество минут.');
+                    commandLoop(user);
+                    return;
+                }
 
-            const status = bannedUser.banned ? 'заблокирован' : 'разблокирован';
-            console.log(`🚫 Пользователь ${username} ${status}!`);
+                const banExpiration = new Date();
+                banExpiration.setMinutes(banExpiration.getMinutes() + banDuration);
 
-            logAction(user, `${status === 'заблокирован' ? 'Заблокировал' : 'Разблокировал'} пользователя ${username}`);
+                bannedUser.banned = true;
+                bannedUser.banExpiration = banExpiration.toISOString();
+                saveAccounts();
+
+                console.log(`🚫 Пользователь ${username} заблокирован на ${banDuration} минут.`);
+                logAction(user, `Заблокировал пользователя ${username} на ${banDuration} минут`);
+                commandLoop(user);
+            });
+        } else {
+            console.log('❌ Ошибка: пользователь не найден.');
+            commandLoop(user);
+        }
+    });
+}
+
+function checkBanStatus(user) {
+    rl.question('Введите логин пользователя для проверки блокировки: ', (username) => {
+        const checkedUser = accounts.find(acc => acc.username === username);
+        if (checkedUser) {
+            if (checkedUser.banned) {  // Проверка на наличие флага блокировки
+                console.log(`🚫 Пользователь ${username} заблокирован.`);
+            } else {
+                console.log(`✅ Пользователь ${username} не заблокирован.`);
+            }
         } else {
             console.log('❌ Ошибка: пользователь не найден.');
         }
@@ -255,6 +278,7 @@ function commandLoop(user) {
                     console.log('🔹 betaver — перейти в бета верисю')
                     console.log('🔹 setlogin — изменить логин');
                     console.log('🔹 deluser — удалить пользователя');
+                    console.log('🔹 checkban — проверить бан пользователя');
                 }
                 if (user.role === 'vip') {
                     console.log('⭐ [VIP] Дополнительные команды:');
@@ -277,6 +301,9 @@ function commandLoop(user) {
                 break;
             case 'exit':
                 mainMenu();
+                break;
+            case 'checkban':
+                checkBanStatus(user);
                 break;
             case 'showusers':
                 if (user.role === 'admin') showAccounts();
