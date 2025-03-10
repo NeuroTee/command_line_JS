@@ -109,6 +109,31 @@ function banUser(user) {
     });
 }
 
+function giftVIPStatus(user) {
+    if (user.role === 'vip') {
+        rl.question('Введите логин друга, которому хотите подарить VIP-статус: ', (username) => {
+            const recipient = accounts.find(acc => acc.username === username);
+            if (recipient) {
+                // Снимаем VIP роль с дарителя и даём её получателю
+                user.role = 'user';  // Даритель теряет VIP статус
+                recipient.role = 'vip';  // Получатель становится VIP
+
+                saveAccounts();
+
+                logAction(user, 'Подарил свой вип статус');
+                console.log('🎁 Подарили VIP-статус пользователю ${username} и потеряли свой VIP-статус.');
+            } else {
+                console.log('❌ Ошибка: пользователь не найден.');
+            }
+            commandLoop(user);
+        });
+    } else {
+        console.log('❌ Эта команда доступна только VIP пользователям.');
+    }
+}
+
+
+
 function setPermission(user) {
     rl.question('Введите логин пользователя: ', (username) => {
         rl.question('Введите новую роль (user/vip/admin): ', (newRole) => {
@@ -235,6 +260,7 @@ function commandLoop(user) {
                     console.log('⭐ [VIP] Дополнительные команды:');
                     console.log('🔹 setlogin — изменить логин');
                     console.log('🔹 betaver — перейти в бета верисю');
+                    console.log('🔹 giftvip — передать свою роль vip другому пользователю');
 
                 }
                 break;
@@ -273,6 +299,9 @@ function commandLoop(user) {
                     betaLoop(user);
                 }
                 else console.log('❌ Вы не можете учавтсвовать в бета тестировании');
+                break;
+            case 'giftvip':
+                giftVIPStatus(user);
                 break;
             default:
                 console.log('❌ Неизвестная команда!');
