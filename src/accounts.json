@@ -15,7 +15,6 @@
         "username": "hello",
         "password": "$2b$10$ultGeTAyRpBhDHlpZ48xceDmtscdzMGvfNHxjUgWGBWoOZUKo/656",
         "role": "vip",
-        "banned": true,
-        "banExpiration": "2025-03-10T05:57:08.122Z"
+        "banned": false
     }
 ]

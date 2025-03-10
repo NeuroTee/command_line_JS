@@ -88,31 +88,24 @@ function login() {
 
 function banUser(user) {
     rl.question('Введите логин пользователя для блокировки: ', (username) => {
+        if (!accounts || !Array.isArray(accounts)) {
+            console.log('❌ Ошибка: база данных пользователей повреждена.');
+            return commandLoop(user);
+        }
+
         const bannedUser = accounts.find(acc => acc.username === username);
         if (bannedUser) {
-            rl.question('Введите количество минут для блокировки: ', (minutes) => {
-                const banDuration = parseInt(minutes, 10);
-                if (isNaN(banDuration) || banDuration <= 0) {
-                    console.log('❌ Ошибка: неверное количество минут.');
-                    commandLoop(user);
-                    return;
-                }
+            bannedUser.banned = !bannedUser.banned;
+            saveAccounts();
 
-                const banExpiration = new Date();
-                banExpiration.setMinutes(banExpiration.getMinutes() + banDuration);
+            const status = bannedUser.banned ? 'заблокирован' : 'разблокирован';
+            console.log(`🚫 Пользователь ${username} ${status}!`);
 
-                bannedUser.banned = true;
-                bannedUser.banExpiration = banExpiration.toISOString();
-                saveAccounts();
-
-                console.log(`🚫 Пользователь ${username} заблокирован на ${banDuration} минут.`);
-                logAction(user, `Заблокировал пользователя ${username} на ${banDuration} минут`);
-                commandLoop(user);
-            });
+            logAction(user, `${status === 'заблокирован' ? 'Заблокировал' : 'Разблокировал'} пользователя ${username}`);
         } else {
             console.log('❌ Ошибка: пользователь не найден.');
-            commandLoop(user);
         }
+        commandLoop(user);
     });
 }
 
@@ -386,6 +379,64 @@ function callAssistant(user) {
     });
 }
 
+//Переписка локальная
+
+function loadMessages() {
+    if (fs.existsSync('messages.json')) {
+        const data = fs.readFileSync('messages.json', 'utf8');
+        return JSON.parse(data);
+    }
+    return []; // Если файла нет, возвращаем пустой массив
+}
+
+function saveMessages(messages) {
+    fs.writeFileSync('messages.json', JSON.stringify(messages, null, 4));
+}
+
+function sendMessage(user) {
+    rl.question('Введите логин получателя: ', (toUser) => {
+        const recipient = accounts.find(acc => acc.username === toUser);
+        if (!recipient) {
+            console.log('❌ Ошибка: пользователь не найден!');
+            return betaLoop(user); // Избегаем двойного вызова betaLoop()
+        }
+
+        rl.question('Введите сообщение: ', (messageText) => {
+            if (!messageText.trim()) {
+                console.log('❌ Ошибка: сообщение не может быть пустым!');
+                return betaLoop(user); // Тут тоже лучше вернуться в обычный режим
+            }
+
+            const messages = loadMessages();
+            messages.push({
+                from: user.username,
+                to: toUser,
+                message: messageText,
+                timestamp: new Date().toISOString()
+            });
+            saveMessages(messages);
+
+            console.log('✅ Сообщение отправлено!');
+            betaLoop(user);
+        });
+    });
+}
+
+// Просмотр входящих сообщений
+function viewMessages(user) {
+    const messages = loadMessages().filter(msg => msg.to === user.username);
+
+    if (messages.length === 0) {
+        console.log('📭 У вас нет новых сообщений.');
+    } else {
+        console.log('📩 У вас ${messages.length} сообщений:');
+        messages.forEach(msg => {
+            console.log('📨 От ${msg.from} (${msg.timestamp}): ${msg.message}');
+        });
+    }
+    betaLoop(user);
+}
+
 
 
 function betaLoop(user) {
@@ -396,6 +447,8 @@ function betaLoop(user) {
                 console.log('📜 Доступные команды:');
                 console.log('🤖 ai - пообщатся с личным помощником')
                 console.log('🔹 exit - вернутся в обыный режим')
+                console.log('🔹 sendmsg - отправить сообщение пользователю')
+                console.log('🔹 inbox - посмотреть сообщения')
                 break;
             case 'ai':
                 console.log('Включен режим помощника (может быть очень слабым)');
@@ -404,6 +457,12 @@ function betaLoop(user) {
             case 'exit':
                 console.log('Включен обычный режим');
                 commandLoop(user);
+                break;
+            case 'sendmsg':
+                sendMessage(user);
+                break;
+            case 'inbox':
+                viewMessages(user);
                 break;
             default:
                 console.log('❌ Неизвестная команда!');
